@@ -15,8 +15,10 @@ jobs:
           STREAM_KEY: ${{ secrets.STREAM_KEY }}
           VIDEO_URL: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
         run: |
-          ffmpeg -re -stream_loop -1 -i "$VIDEO_URL" \
-            -c:v libx264 -preset ultrafast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 60 \
-            -c:a aac -b:a 128k -ar 44100 \
-            -t 02:30:00 \
-            -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+          ffmpeg -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+            -re -stream_loop -1 -i "$VIDEO_URL" \
+            -c:v libx264 -preset ultrafast -b:v 2500k -maxrate 2500k -bufsize 5000k \
+            -pix_fmt yuv420p -g 60 -fflags +genpts \
+            -c:a aac -b:a 128k -ar 44100 -ac 2 \
+            -flvflags no_duration_filesize \
+            -f flv "rtmps://a.rtmps.youtube.com/live2/$STREAM_KEY"
