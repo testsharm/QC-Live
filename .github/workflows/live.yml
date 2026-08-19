@@ -13,7 +13,7 @@ jobs:
       - name: Start Stream
         env:
           STREAM_KEY: ${{ secrets.STREAM_KEY }}
-          VIDEO_URL: "PASTE_YOUR_DIRECT_VIDEO_LINK_HERE"
+          VIDEO_URL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
         run: |
           ffmpeg -re -stream_loop -1 -i "$VIDEO_URL" \
             -c:v libx264 -preset superfast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 60 \
