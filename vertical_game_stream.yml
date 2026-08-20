@@ -1,0 +1,59 @@
+name: 3D Vertical Bus Game Stream
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Start game server in background
+        run: |
+          nohup node server.js > server.log 2>&1 &
+          echo "Waiting for server to become reachable..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3000/health > /dev/null; then
+              echo "Server is up."
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Stream to YouTube (auto-restart on crash)
+        env:
+          STREAM_KEY: ${{ secrets.STREAM_KEY }}
+        run: |
+          END_TIME=$((SECONDS + 340*60))
+          while [ $SECONDS -lt $END_TIME ]; do
+            echo "Starting stream process..."
+            node record_and_stream.js
+            EXIT_CODE=$?
+            echo "record_and_stream.js exited with code $EXIT_CODE"
+            if [ $SECONDS -ge $END_TIME ]; then
+              echo "Job time budget reached, stopping."
+              break
+            fi
+            echo "Restarting stream in 5 seconds..."
+            sleep 5
+          done
+
+      - name: Show server log on failure
+        if: failure()
+        run: cat server.log || true
